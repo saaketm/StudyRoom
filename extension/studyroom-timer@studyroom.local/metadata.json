@@ -1,0 +1,7 @@
+{
+  "uuid": "studyroom-timer@studyroom.local",
+  "name": "StudyRoom Timer",
+  "description": "Shows the running StudyRoom study session (subject and time) in the top bar. Read-only display; pause/stop are sent to the StudyRoom app.",
+  "shell-version": ["48", "49", "50", "51"],
+  "version": 1
+}

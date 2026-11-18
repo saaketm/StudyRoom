@@ -1,0 +1,18 @@
+.studyroom-box {
+  spacing: 7px;
+}
+
+.studyroom-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 5px;
+}
+
+.studyroom-pause {
+  icon-size: 12px;
+}
+
+.studyroom-label {
+  font-feature-settings: "tnum";
+  font-weight: 500;
+}
