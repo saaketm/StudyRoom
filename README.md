@@ -16,8 +16,7 @@ in the same place.
 
 *Screenshots use made-up sample data.*
 
-> **AI disclosure:** this project was written almost entirely by an AI coding assistant
-> (Anthropic's Claude, via Claude Code) from a human's requirements and direction.
+> **AI disclosure:** this project is entirely AI-generated, by Anthropic's Claude via Claude Code.
 > See [AI_USAGE.md](AI_USAGE.md) for details.
 
 ---
