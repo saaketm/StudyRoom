@@ -165,6 +165,7 @@ extension/               optional GNOME Shell top-bar timer
 data/                    app icon
 docs/                    screenshots
 DESIGN.md                how it works and why
+CHANGELOG.md             version history
 ```
 
 See [DESIGN.md](DESIGN.md) for the architecture and design decisions.
