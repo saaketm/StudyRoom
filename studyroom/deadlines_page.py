@@ -210,7 +210,9 @@ class DeadlinesPage(Gtk.Box):
 
     def _item_row(self, kind, it, ref, show_left=False, show_date=False):
         row = Gtk.ListBoxRow(activatable=True)
-        row.connect("activate", lambda *_: ItemDialog(self.win, self.store, kind, it).present(self.win))
+        # Called by the ListBox's row-activated handler. (Re-emitting the row's own "activate" signal
+        # there would make GTK emit row-activated again -> endless loop -> crash.)
+        row.open_editor = lambda: ItemDialog(self.win, self.store, kind, it).present(self.win)
         box = Gtk.Box(spacing=12, margin_top=9, margin_bottom=9, margin_start=10, margin_end=12)
         box.append(Tick(it["color"], it["done"],
                         lambda: self.store.set_done(kind, it["id"], not it["done"])))
@@ -247,7 +249,7 @@ class DeadlinesPage(Gtk.Box):
     def _list(self, rows):
         lb = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
         lb.add_css_class("boxed-list")
-        lb.connect("row-activated", lambda _l, r: r.emit("activate"))
+        lb.connect("row-activated", lambda _l, r: r.open_editor())
         for r in rows:
             lb.append(r)
         return lb
@@ -328,10 +330,30 @@ class DeadlinesPage(Gtk.Box):
         self.sel_day = d
         if d.month != self.month.month or d.year != self.month.year:
             self.month = date(d.year, d.month, 1)
-        self.refresh()
+            self.refresh()
+            return
+        # Same month: only move the highlight. Rebuilding the grid here would replace the day buttons
+        # between the two clicks of a double-click, so the double-click would never register.
+        for day, btn in self.cells.items():
+            if day == d:
+                btn.add_css_class("selected-day")
+            else:
+                btn.remove_css_class("selected-day")
+        self._refresh_side(tu.now())
+
+    def _cell_double_click(self, btn, x, y, d):
+        """Double-click on a deadline chip edits it; anywhere else in the day adds a new deadline."""
+        w = btn.pick(x, y, Gtk.PickFlags.DEFAULT)
+        while w is not None and w is not btn and not hasattr(w, "deadline"):
+            w = w.get_parent()
+        if w is not None and hasattr(w, "deadline"):
+            ItemDialog(self.win, self.store, "deadlines", w.deadline).present(self.win)
+        else:
+            ItemDialog(self.win, self.store, "deadlines", day=d).present(self.win)
 
     def _refresh_grid(self, ref):
         clear(self.grid)
+        self.cells = {}
         self.month_lbl.set_label(f"{tu.MONTHS[self.month.month - 1]} {self.month.year}")
         fw = int(self.store.get("first_weekday"))
         for i in range(7):
@@ -361,6 +383,7 @@ class DeadlinesPage(Gtk.Box):
                 chip.set_ellipsize(3)
                 chip.set_max_width_chars(1)
                 chip.set_hexpand(True)
+                chip.deadline = it
                 if it["done"]:
                     chip.add_css_class("done-title")
                 vb.append(chip)
@@ -372,9 +395,9 @@ class DeadlinesPage(Gtk.Box):
             btn.connect("clicked", lambda _b, d=d: self._select(d))
             g = Gtk.GestureClick()
             g.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
-            g.connect("pressed", lambda _g, n, _x, _y, d=d: n == 2 and ItemDialog(
-                self.win, self.store, "deadlines", day=d).present(self.win))
+            g.connect("pressed", lambda _g, n, x, y, d=d, btn=btn: n == 2 and self._cell_double_click(btn, x, y, d))
             btn.add_controller(g)
+            self.cells[d] = btn
             self.grid.attach(btn, i % 7, 1 + i // 7, 1, 1)
 
     def _refresh_side(self, ref):
